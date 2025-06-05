@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editor de Newsletter</title>
+    <script src="https://cdn.tiny.cloud/1/your-api-key/tinymce/6/tinymce.min.js" referrerpolicy="origin"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            margin: 20px auto;
+            max-width: 600px;
+            border: 1px solid #ccc;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .form-group input[type="text"],
+        .form-group textarea {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+            width: 100%;
+        }
+        .editor-container {
+            margin-bottom: 20px;
+            border: 1px solid #ccc;
+        }
+        #htmlOutput {
+            width: 100%;
+            min-height: 150px;
+            font-family: monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        /* Estilo para centrar los títulos de las secciones */
+        h2 {
+            text-align: center;
+        }
+	    /* Estilos para el botón de regreso */
+				.back-to-menu-button {
+			display: inline-flex; /* Para alinear el icono y el texto */
+			align-items: center;
+			padding: 12px 25px;
+			background-color: #007bff; /* Color secundario de tu menú */
+			color: #FFFFFF;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 1.1em;
+			transition: background-color 0.3s ease, transform 0.2s ease;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.back-to-menu-button:hover {
+			background-color: #0056b3; /* Un tono un poco más oscuro al pasar el mouse */
+			transform: translateY(-2px); /* Pequeño efecto de elevación */
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.button-icon {
+			margin-right: 8px;
+			font-size: 1.3em;
+		}
+		
+    </style>
+</head>
+<body>
+    <div style="max-width: 600px; margin: 0 auto; border: 1px solid #eee; padding: 20px; box-sizing: border-box;">
+        <h1>Crea tu Newsletter</h1>
+
+        <div class="form-group">
+            <label for="titleImageURL">1. Imagen para "Título de la Newsletter" (Ingrese la URL de la imagen)</label>
+            <input type="text" id="titleImageURL" placeholder="URL de la imagen del título">
+        </div>
+
+        <h2>2. Novedades</h2>
+        <div class="editor-container">
+            <textarea id="newsSection"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="usefulInfoImageURL1">3. Imagen para "Informaciones Útiles" (Ingrese la URL de la imagen)</label>
+            <input type="text" id="usefulInfoImageURL1" placeholder="URL de la imagen de Informaciones Útiles 1">
+        </div>
+
+        <h2>3. Informaciones Útiles</h2>
+        <div class="editor-container">
+            <textarea id="usefulInfoSection1"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="usefulInfoImageURL2">4. Imagen para "Ultimas Noticias" (Ingrese la URL de la imagen)</label>
+            <input type="text" id="usefulInfoImageURL2" placeholder="URL de la imagen de Informaciones Útiles 2">
+        </div>
+
+        <h2>4. Ultimas Noticias</h2>
+        <div class="editor-container">
+            <textarea id="usefulInfoSection2"></textarea>
+        </div>
+
+        <div class="form-group">
+            <label for="otherImageURL">5. Imagen para "Otros" (Ingrese la URL de la imagen)</label>
+            <input type="text" id="otherImageURL" placeholder="URL de la imagen de Otros">
+        </div>
+
+        <h2>5. Otros</h2>
+        <div class="editor-container">
+            <textarea id="otherSection"></textarea>
+        </div>
+
+        <h2>Pie de Página</h2>
+        <div class="editor-container">
+            <textarea id="footerSection"></textarea>
+        </div>
+
+        <button onclick="generarNewsletterHTML()">Generar Código HTML para Newsletter</button>
+
+        <h2>Código HTML Generado</h2>
+        <textarea id="htmlOutput" readonly placeholder="El código HTML de tu newsletter aparecerá aquí."></textarea>
+    </div>
+
+    <script>
+        tinymce.init({
+            selector: '#newsSection, #usefulInfoSection1, #usefulInfoSection2, #otherSection, #footerSection',
+            plugins: 'anchor autolink charmap codesample emoticons image link lists media searchreplace table visualblocks wordcount',
+            toolbar: 'undo redo | blocks fontfamily fontsize | bold italic underline strikethrough | link image media table | align lineheight | numlist bullist indent outdent | emoticons charmap | removeformat | code',
+            image_advtab: true,
+            media_live_embeds: true,
+            urlconverter_fetch: false, // Deshabilitar la verificación de dominios
+            // **Importante:** Reemplaza 'your-api-key' con tu API key de TinyMCE.
+            // Puedes obtener una gratis en la página de TinyMCE.
+        });
+
+        function generarNewsletterHTML() {
+            const titleImageURL = document.getElementById('titleImageURL').value;
+            const newsContent = tinymce.get('newsSection').getContent();
+            const usefulInfoImageURL1 = document.getElementById('usefulInfoImageURL1').value;
+            const usefulInfoContent1 = tinymce.get('usefulInfoSection1').getContent();
+            const usefulInfoImageURL2 = document.getElementById('usefulInfoImageURL2').value;
+            const usefulInfoContent2 = tinymce.get('usefulInfoSection2').getContent();
+            const otherImageURL = document.getElementById('otherImageURL').value;
+            const otherContent = tinymce.get('otherSection').getContent();
+            const footerContent = tinymce.get('footerSection').getContent();
+            const htmlOutput = document.getElementById('htmlOutput');
+
+            const newsletterWidth = '600px'; // Ancho para el email
+
+            // Función para centrar imágenes dentro del contenido
+            const centerImages = (htmlContent) => {
+                const regexImg = /(<img[^>]*>)/gi;
+                return htmlContent.replace(regexImg, (match) => {
+                    const regexParagraph = /<p>(.*?)<\/p>/i;
+                    const paragraphMatch = match.match(regexParagraph);
+                    if (paragraphMatch && paragraphMatch.includes('<img')) {
+                        return match.replace('<p>', '<p style="text-align: center;">');
+                    } else {
+                        return `<div style="text-align: center;">${match}</div>`;
+                    }
+                });
+            };
+
+            let processedNewsContent = centerImages(newsContent);
+            let processedUsefulInfoContent1 = centerImages(usefulInfoContent1);
+            let processedUsefulInfoContent2 = centerImages(usefulInfoContent2);
+            let processedOtherContent = centerImages(otherContent);
+            let processedFooterContent = centerImages(footerContent);
+
+            let newsletterHTML = `<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newsletter-2025</title>
+</head>
+<body style="width: 100%; margin: 0; padding: 0; background-color: #f4f4f4;">
+    <center>
+        <div style="max-width: ${newsletterWidth}; margin: 20px auto; background-color: #ffffff; border: 1px solid #ddd; border-radius: 5px; overflow: hidden;">
+            <div style="padding: 15px;">`;
+
+            if (titleImageURL) {
+                newsletterHTML += `
+                <div style="margin-bottom: 15px; text-align: center;">
+                    <img src="${titleImageURL}" alt="Título de la Newsletter" style="display: block; max-width: 100%; height: auto; margin: 0 auto;">
+                </div>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+            }
+
+            newsletterHTML += `
+                <section style="margin-bottom: 20px;">
+                    <h2 style="color: #555; margin-bottom: 10px; text-align: center;">Novedades</h2>
+                    <div style="line-height: 1.6;">
+                        ${processedNewsContent}
+                    </div>
+                </section>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+
+            if (usefulInfoImageURL1) {
+                newsletterHTML += `
+                <div style="margin-bottom: 15px; text-align: center;">
+                    <img src="${usefulInfoImageURL1}" alt="Informaciones Útiles 1" style="display: block; max-width: 100%; height: auto; margin: 0 auto;">
+                </div>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+            }
+
+            newsletterHTML += `
+                <section style="margin-bottom: 20px;">
+                    <h2 style="color: #555; margin-bottom: 10px; text-align: center;">Informaciones Útiles</h2>
+                    <div style="line-height: 1.6;">
+                        ${processedUsefulInfoContent1}
+                    </div>
+                </section>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+
+            if (usefulInfoImageURL2) {
+                newsletterHTML += `
+                <div style="margin-bottom: 15px; text-align: center;">
+                    <img src="${usefulInfoImageURL2}" alt="Informaciones Útiles 2" style="display: block; max-width: 100%; height: auto; margin: 0 auto;">
+                </div>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+            }
+
+            newsletterHTML += `
+                <section style="margin-bottom: 20px;">
+                    <h2 style="color: #555; margin-bottom: 10px; text-align: center;">Ultimas Noticias</h2>
+                    <div style="line-height: 1.6;">
+                        ${processedUsefulInfoContent2}
+                    </div>
+                </section>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+
+            if (otherImageURL) {
+                newsletterHTML += `
+                <div style="margin-bottom: 15px; text-align: center;">
+                    <img src="${otherImageURL}" alt="Otros" style="display: block; max-width: 100%; height: auto; margin: 0 auto;">
+                </div>
+                <hr style="border: 1px solid #ddd; margin-bottom: 15px;">`;
+            }
+
+            newsletterHTML += `
+                <section style="margin-bottom: 20px;">
+                    <h2 style="color: #555; margin-bottom: 10px; text-align: center;">Otros</h2>
+                    <div style="line-height: 1.6;">
+                        ${processedOtherContent}
+                    </div>
+                </section>
+                <hr style="border: 1px solid #ddd; margin-top: 20px; margin-bottom: 10px;">
+                <footer style="font-size: 0.8em; color: #777; text-align: center; margin-top: 10px;">
+                    ${processedFooterContent}
+                </footer>
+            </div>
+        </div>
+    </center>
+</body>
+</html>`;
+
+            htmlOutput.value = newsletterHTML;
+        }
+    </script>
+	<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+		<a href="../index.html" class="back-to-menu-button">
+		<span class="button-icon">&larr;</span> Volver al Menú Principal
+		</a>
+	</div>
+</body>
+</html>
