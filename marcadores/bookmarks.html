@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mi Administrador de Marcadores</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 30px;
+            background-color: #f8f9fa;
+            color: #343a40;
+        }
+
+        h1 {
+            color: #007bff;
+            margin-bottom: 30px;
+        }
+
+        .controls-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 600px;
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .controls-container button,
+        .custom-file-upload {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease-in-out;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .controls-container button:hover,
+        .custom-file-upload:hover {
+            background-color: #0056b3;
+        }
+
+        .search-container {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            overflow: hidden;
+            background-color: #fff;
+            margin-right: 15px;
+            max-width: 300px;
+            width: 100%;
+        }
+
+        .search-input {
+            border: none;
+            padding: 10px;
+            font-size: 16px;
+            flex-grow: 1;
+            outline: none;
+        }
+
+        .search-icon {
+            padding: 10px;
+            color: #6c757d; /* Asegurándonos de que el color sea gris */
+        }
+
+        .bookmark-form {
+            background-color: #fff;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            margin-bottom: 30px;
+            width: 100%;
+            max-width: 600px;
+            display: grid;
+            grid-gap: 15px;
+        }
+
+        .bookmark-form label {
+            font-weight: 500;
+            color: #495057;
+        }
+
+        .bookmark-form input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ced4da;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 16px;
+        }
+
+        .bookmark-form button[type="button"] { /* Style for the add bookmark button */
+            background-color: #007bff; /* Using the primary blue color */
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .bookmark-form button[type="button"]:hover {
+            background-color: #0056b3;
+        }
+
+        .bookmarks-list {
+            list-style: none;
+            padding: 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        .bookmarks-list li {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 6px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid #007bff;
+        }
+
+        .bookmark-info a {
+            color: #007bff;
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 18px;
+        }
+
+        .bookmark-info a:hover {
+            text-decoration: underline;
+        }
+
+        .delete-button {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.2s ease-in-out;
+        }
+
+        .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .empty-message {
+            color: #6c757d;
+            font-style: italic;
+            font-size: 16px;
+        }
+
+        input[type="file"] {
+            display: none; /* Hide the default file input */
+        }
+
+        .custom-file-upload {
+            text-align: center;
+        }
+	    /* Estilos para el botón de regreso */
+				.back-to-menu-button {
+			display: inline-flex; /* Para alinear el icono y el texto */
+			align-items: center;
+			padding: 12px 25px;
+			background-color: #007bff; /* Color secundario de tu menú */
+			color: #FFFFFF;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 1.1em;
+			transition: background-color 0.3s ease, transform 0.2s ease;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.back-to-menu-button:hover {
+			background-color: #0056b3; /* Un tono un poco más oscuro al pasar el mouse */
+			transform: translateY(-2px); /* Pequeño efecto de elevación */
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.button-icon {
+			margin-right: 8px;
+			font-size: 1.3em;
+		}
+		
+    </style>
+</head>
+<body>
+    <h1>Mi Administrador de Marcadores</h1>
+
+    <div class="controls-container">
+        <div class="search-container">
+            <span class="search-icon">&#128269;</span>
+            <input type="text" id="searchInput" class="search-input" placeholder="Buscar marcadores...">
+        </div>
+        <button onclick="exportBookmarks()">Exportar</button>
+        <label for="importFile" class="custom-file-upload">Importar</label>
+        <input type="file" id="importFile" accept=".json" onchange="importBookmarks(this)">
+    </div>
+
+    <div class="bookmark-form">
+        <label for="bookmarkTitle">Título:</label>
+        <input type="text" id="bookmarkTitle" placeholder="Ej: Página de Noticias">
+
+        <label for="bookmarkURL">URL:</label>
+        <input type="text" id="bookmarkURL" placeholder="Ej: https://www.ejemplo.com">
+
+        <button type="button" onclick="addBookmark()">Guardar</button>
+    </div>
+
+    <h2>Mis Marcadores</h2>
+    <ul id="bookmarksList" class="bookmarks-list">
+        <li id="emptyMessage" class="empty-message">No hay marcadores guardados.</li>
+    </ul>
+
+    <script>
+        const bookmarksList = document.getElementById('bookmarksList');
+        const emptyMessage = document.getElementById('emptyMessage');
+        const importFile = document.getElementById('importFile');
+        const searchInput = document.getElementById('searchInput');
+
+        let bookmarks = loadBookmarks();
+        renderBookmarks();
+
+        searchInput.addEventListener('input', filterBookmarks);
+
+        function loadBookmarks() {
+            const storedBookmarks = localStorage.getItem('myBookmarks');
+            return storedBookmarks ? JSON.parse(storedBookmarks) : [];
+        }
+
+        function saveBookmarks() {
+            localStorage.setItem('myBookmarks', JSON.stringify(bookmarks));
+        }
+
+        function addBookmark() {
+            const titleInput = document.getElementById('bookmarkTitle');
+            const urlInput = document.getElementById('bookmarkURL');
+            const title = titleInput.value.trim();
+            const url = urlInput.value.trim();
+
+            if (title && url) {
+                bookmarks.push({ title, url });
+                saveBookmarks();
+                renderBookmarks();
+                titleInput.value = '';
+                urlInput.value = '';
+            } else {
+                alert('Por favor, introduce un título y una URL.');
+            }
+        }
+
+        function deleteBookmark(index) {
+            if (confirm('¿Seguro que quieres eliminar este marcador?')) {
+                bookmarks.splice(index, 1);
+                saveBookmarks();
+                renderBookmarks();
+            }
+        }
+
+        function renderBookmarks(filterText = '') {
+            bookmarksList.innerHTML = '';
+            const filteredBookmarks = bookmarks.filter(bookmark =>
+                bookmark.title.toLowerCase().includes(filterText.toLowerCase()) ||
+                bookmark.url.toLowerCase().includes(filterText.toLowerCase())
+            );
+
+            if (filteredBookmarks.length === 0) {
+                bookmarksList.appendChild(emptyMessage);
+                emptyMessage.style.display = 'block';
+            } else {
+                emptyMessage.style.display = 'none';
+                filteredBookmarks.forEach((bookmark, index) => {
+                    const listItem = document.createElement('li');
+                    listItem.innerHTML = `
+                        <div class="bookmark-info">
+                            <a href="${bookmark.url}" target="_blank">${bookmark.title}</a>
+                        </div>
+                        <button class="delete-button" onclick="deleteBookmark(${bookmarks.indexOf(bookmark)})">Eliminar</button>
+                    `;
+                    bookmarksList.appendChild(listItem);
+                });
+            }
+        }
+
+        function exportBookmarks() {
+            const jsonString = JSON.stringify(bookmarks, null, 2);
+            const blob = new Blob([jsonString], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'mis_marcadores.json';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        function importBookmarks(fileInput) {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    try {
+                        const importedBookmarks = JSON.parse(e.target.result);
+                        if (Array.isArray(importedBookmarks)) {
+                            bookmarks = importedBookmarks;
+                            saveBookmarks();
+                            renderBookmarks();
+                            alert('Marcadores importados exitosamente.');
+                        } else {
+                            alert('El archivo importado no tiene el formato correcto.');
+                        }
+                        fileInput.value = ''; // Reset the file input
+                    } catch (error) {
+                        alert('Error al leer o analizar el archivo.');
+                        console.error('Error al importar marcadores:', error);
+                    }
+                };
+                reader.readAsText(file);
+            }
+        }
+
+        function filterBookmarks() {
+            const searchText = searchInput.value.trim();
+            renderBookmarks(searchText);
+        }
+    </script>
+	<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+		<a href="../index.html" class="back-to-menu-button">
+		<span class="button-icon">&larr;</span> Volver al Menú Principal
+		</a>
+	</div>
+</body>
+</html>
