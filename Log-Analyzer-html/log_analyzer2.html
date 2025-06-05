@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Décodeur de Logs Avancé avec Extraction & Export CSV</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1, h2 {
+            color: #0056b3;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+		             /* Estilos para el botón de regreso */
+		.back-to-menu-button {
+			display: inline-flex; /* Para alinear el icono y el texto */
+			align-items: center;
+			padding: 12px 25px;
+			background-color: #007bff; /* Color secundario de tu menú */
+			color: #FFFFFF;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 1.1em;
+			transition: background-color 0.3s ease, transform 0.2s ease;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.back-to-menu-button:hover {
+			background-color: #0056b3; /* Un tono un poco más oscuro al pasar el mouse */
+			transform: translateY(-2px); /* Pequeño efecto de elevación */
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.button-icon {
+			margin-right: 8px;
+			font-size: 1.3em;
+		}
+		
+        select, input[type="text"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            min-width: 150px;
+        }
+        #rawLogOutput {
+            background-color: #eee;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 150px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        #decodedLogOutput, #uniqueDataSummary {
+            max-height: 250px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 15px;
+            background-color: #f9f9f9;
+            border-radius: 5px;
+        }
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 3px 0;
+            border-bottom: 1px dotted #ccc;
+        }
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        .highlight-error {
+            background-color: #ffe0e0;
+            font-weight: bold;
+            color: #cc0000;
+        }
+        .highlight-warning {
+            background-color: #fffacd;
+            font-weight: bold;
+            color: #ff8c00;
+        }
+        .highlight-info {
+            background-color: #e0f2f7;
+            color: #006080;
+        }
+        .log-entry.hidden {
+            display: none;
+        }
+        .filter-group {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background-color: #f0f8ff;
+        }
+        .filter-group label {
+            font-weight: bold;
+            margin-right: 10px;
+        }
+        .checkbox-label {
+            margin-right: 15px;
+            display: inline-block;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        
+        .summary-category-header {
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #0056b3;
+            font-size: 1.1em;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+        }
+        .summary-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 15px;
+        }
+        .summary-table th, .summary-table td {
+            border: 1px solid #eee;
+            padding: 8px 12px;
+            text-align: left;
+        }
+        .summary-table th {
+            background-color: #e9ecef;
+            font-weight: bold;
+            color: #495057;
+        }
+        .summary-table tbody tr:nth-child(even) {
+            background-color: #f6f6f6;
+        }
+        .summary-table td:last-child {
+            text-align: left;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Décodeur de Logs Avancé</h1>
+        <p>Chargez un fichier de log (.txt) pour afficher et filtrer son contenu, et exporter les résultats.</p>
+
+        <input type="file" id="logFileInput" accept=".txt">
+        <button onclick="loadLogFile()">Charger le Fichier</button>
+        <button onclick="exportFilteredLogsToCsv()" id="exportCsvButton" disabled>Exporter les Logs Filtrés (CSV)</button>
+    </div>
+
+    <div class="container">
+        <h2>Contenu Brut du Log</h2>
+        <pre id="rawLogOutput">Aucun fichier chargé.</pre>
+    </div>
+
+    <div class="container">
+        <h2>Logs Décodés (par ligne)</h2>
+        <p>Utilisez les filtres pour affiner votre recherche. Les lignes filtrées par type de données sont simplifiées et n'affichent que les valeurs uniques par ligne.</p>
+
+        <div class="filter-group">
+            <label for="filterLevel">Filtrer par niveau : </label>
+            <select id="filterLevel" onchange="applyFilters()">
+                <option value="all">Tout afficher</option>
+                <option value="error">ERREUR</option>
+                <option value="warning">AVERTISSEMENT</option>
+                <option value="info">INFO</option>
+            </select>
+
+            <label for="filterText">Filtrer par texte : </label>
+            <input type="text" id="filterText" placeholder="Ex: Échec de connexion" onkeyup="applyFilters()">
+        </div>
+
+        <div class="filter-group">
+            <label>Filtrer par type de données : </label>
+            <label class="checkbox-label"><input type="checkbox" id="filterIp" onchange="applyFilters()"> Adresse IP</label>
+            <label class="checkbox-label"><input type="checkbox" id="filterUrl" onchange="applyFilters()"> URL</label>
+            <label class="checkbox-label"><input type="checkbox" id="filterHostname" onchange="applyFilters()"> Nom d'hôte</label>
+            <label class="checkbox-label"><input type="checkbox" id="filterMac" onchange="applyFilters()"> Adresse MAC</label>
+        </div>
+        
+        <button onclick="clearAllFilters()">Effacer tous les Filtres</button>
+
+        <div id="decodedLogOutput">Aucun log à décoder.</div>
+    </div>
+
+    <div class="container">
+        <h2>Résumé des Données Uniques et Fréquence</h2>
+        <button onclick="exportSummaryToCsv()" id="exportSummaryCsvButton" disabled>Exporter le Résumé (CSV)</button>
+        <div id="uniqueDataSummary">Aucune donnée unique à afficher.</div>
+    </div>
+
+    <script>
+        let fullLogContent = '';
+        let currentFilteredLines = []; 
+
+        // Ces maps seront réinitialisées et remplies selon les filtres de type de données
+        let uniqueIpsWithCount = new Map();
+        let uniqueUrlsWithCount = new Map();
+        let uniqueHostnamesWithCount = new Map();
+        let uniqueMacsWithCount = new Map();
+
+        const ipRegex = /\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}(?::\d+)?\b/g;
+        const urlRegex = /(https?:\/\/[^\s]+)/g;
+        const hostnameRegex = /\b(?:[a-zA-Z0-9-]{1,63}\.)+[a-zA-Z]{2,6}\b/g;
+        const macRegex = /\b([0-9A-Fa-f]{2}[:-]){5}([0-9A-Fa-f]{2})\b/g;
+
+        const logPatternRegex = /^(?:(\w{3}\s+\d{1,2}\s+\d{2}:\d{2}:\d{2})\s+)?(?:[\w.-]+\s+)?([\w.-]+)(?:\[\d+\])?:\s*(.*)$/;
+
+
+        function loadLogFile() {
+            const fileInput = document.getElementById('logFileInput');
+            const rawLogOutput = document.getElementById('rawLogOutput');
+            const decodedLogOutput = document.getElementById('decodedLogOutput');
+            const exportCsvButton = document.getElementById('exportCsvButton');
+            const exportSummaryCsvButton = document.getElementById('exportSummaryCsvButton');
+
+            if (fileInput.files.length === 0) {
+                alert("Veuillez sélectionner un fichier texte.");
+                return;
+            }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                fullLogContent = e.target.result;
+                rawLogOutput.textContent = fullLogContent;
+                exportCsvButton.disabled = false;
+                exportSummaryCsvButton.disabled = false;
+                applyFilters();
+            };
+
+            reader.onerror = function() {
+                rawLogOutput.textContent = "Erreur lors de la lecture du fichier.";
+                decodedLogOutput.innerHTML = "Erreur lors de la lecture du fichier.";
+                exportCsvButton.disabled = true;
+                exportSummaryCsvButton.disabled = true;
+            };
+
+            reader.readAsText(file);
+        }
+
+        function applyFilters() {
+            if (!fullLogContent) {
+                return;
+            }
+
+            const decodedLogOutput = document.getElementById('decodedLogOutput');
+            const uniqueDataSummary = document.getElementById('uniqueDataSummary');
+            decodedLogOutput.innerHTML = '';
+            uniqueDataSummary.innerHTML = '';
+            currentFilteredLines = [];
+
+            // Réinitialiser les maps à chaque application de filtre
+            uniqueIpsWithCount = new Map();
+            uniqueUrlsWithCount = new Map();
+            uniqueHostnamesWithCount = new Map();
+            uniqueMacsWithCount = new Map();
+
+            const lines = fullLogContent.split('\n');
+            const filterLevel = document.getElementById('filterLevel').value;
+            const filterText = document.getElementById('filterText').value.toLowerCase();
+
+            const filterIp = document.getElementById('filterIp').checked;
+            const filterUrl = document.getElementById('filterUrl').checked;
+            const filterHostname = document.getElementById('filterHostname').checked;
+            const filterMac = document.getElementById('filterMac').checked;
+
+            // Cette variable sert uniquement pour l'affichage LIGNE PAR LIGNE des logs décodés
+            const anyDataTypeFilterActiveForLineDisplay = filterIp || filterUrl || filterHostname || filterMac;
+
+            lines.forEach(line => {
+                const trimmedLine = line.trim();
+                if (trimmedLine === '') return;
+
+                const lowerCaseLine = trimmedLine.toLowerCase();
+                let isVisibleInDecodedLogs = true; // Visibilité pour la section "Logs Décodés (par ligne)"
+                let logEntryDivClass = '';
+
+                // 1. Logique de niveau de filtre et de surlignage
+                if (lowerCaseLine.includes('error')) {
+                    logEntryDivClass = 'highlight-error';
+                    if (filterLevel !== 'all' && filterLevel !== 'error') {
+                        isVisibleInDecodedLogs = false;
+                    }
+                } else if (lowerCaseLine.includes('warning')) {
+                    logEntryDivClass = 'highlight-warning';
+                    if (filterLevel !== 'all' && filterLevel !== 'warning') {
+                        isVisibleInDecodedLogs = false;
+                    }
+                } else if (lowerCaseLine.includes('info')) {
+                    logEntryDivClass = 'highlight-info';
+                    if (filterLevel !== 'all' && filterLevel !== 'info') {
+                        isVisibleInDecodedLogs = false;
+                    }
+                } else {
+                    if (filterLevel !== 'all') {
+                        isVisibleInDecodedLogs = false;
+                    }
+                }
+
+                // 2. Logique de filtrage de texte
+                if (filterText !== '' && !lowerCaseLine.includes(filterText)) {
+                    isVisibleInDecodedLogs = false;
+                }
+
+                // Extraire les données (avec duplicata si présents dans la même ligne)
+                const extractedIpsCurrentLine = trimmedLine.match(ipRegex) || [];
+                const extractedUrlsCurrentLine = trimmedLine.match(urlRegex) || [];
+                const extractedHostnamesCurrentLine = trimmedLine.match(hostnameRegex) || [];
+                const extractedMacsCurrentLine = trimmedLine.match(macRegex) || [];
+
+                // 3. Logique de filtrage par type de données pour l'affichage DES LOGS DÉCODÉS
+                let meetsDataTypeFilterForLineDisplay = false;
+                if (!anyDataTypeFilterActiveForLineDisplay) {
+                    meetsDataTypeFilterForLineDisplay = true; // Si aucun filtre de type n'est coché, tout est visible
+                } else {
+                    if (filterIp && extractedIpsCurrentLine.length > 0) meetsDataTypeFilterForLineDisplay = true;
+                    if (filterUrl && extractedUrlsCurrentLine.length > 0) meetsDataTypeFilterForLineDisplay = true;
+                    if (filterHostname && extractedHostnamesCurrentLine.length > 0) meetsDataTypeFilterForLineDisplay = true;
+                    if (filterMac && extractedMacsCurrentLine.length > 0) meetsDataTypeFilterForLineDisplay = true;
+                }
+                
+                if (!meetsDataTypeFilterForLineDisplay) {
+                    isVisibleInDecodedLogs = false;
+                }
+
+                // Si la ligne est visible selon les filtres de niveau et de texte:
+                if (isVisibleInDecodedLogs) {
+                    currentFilteredLines.push(trimmedLine); // Ajouter la ligne originale pour l'export CSV
+
+                    // NOUVEAU : AJOUTER DES DONNÉES AU COMPTEUR GLOBAL SEULEMENT SI LE FILTRE DE TYPE EST ACTIF
+                    if (filterIp) {
+                        extractedIpsCurrentLine.forEach(ip => uniqueIpsWithCount.set(ip, (uniqueIpsWithCount.get(ip) || 0) + 1));
+                    }
+                    if (filterUrl) {
+                        extractedUrlsCurrentLine.forEach(url => uniqueUrlsWithCount.set(url, (uniqueUrlsWithCount.get(url) || 0) + 1));
+                    }
+                    if (filterHostname) {
+                        extractedHostnamesCurrentLine.forEach(hostname => uniqueHostnamesWithCount.set(hostname, (uniqueHostnamesWithCount.get(hostname) || 0) + 1));
+                    }
+                    if (filterMac) {
+                        extractedMacsCurrentLine.forEach(mac => uniqueMacsWithCount.set(mac, (uniqueMacsWithCount.get(mac) || 0) + 1));
+                    }
+
+                    // Construire la displayLine simplifiée pour l'affichage des logs décodés
+                    let displayLine = trimmedLine; // Par défaut, afficher la ligne complète
+                    if (anyDataTypeFilterActiveForLineDisplay) { // Si un filtre de type est actif pour l'affichage
+                        logPatternRegex.lastIndex = 0;
+                        const logMatch = logPatternRegex.exec(trimmedLine);
+                        
+                        const timestamp = logMatch && logMatch[1] ? logMatch[1] : '';
+                        const process = logMatch && logMatch[2] ? logMatch[2] : '';
+                        
+                        let simplifiedParts = [];
+                        if (timestamp) simplifiedParts.push(timestamp);
+                        if (process) simplifiedParts.push(process);
+
+                        // Récupérer les uniques POUR LA LIGNE ACTUELLE pour l'affichage
+                        const uniqueIpsInLine = Array.from(new Set(extractedIpsCurrentLine));
+                        const uniqueUrlsInLine = Array.from(new Set(extractedUrlsCurrentLine));
+                        const uniqueHostnamesInLine = Array.from(new Set(extractedHostnamesCurrentLine));
+                        const uniqueMacsInLine = Array.from(new Set(extractedMacsCurrentLine));
+
+                        if (filterIp && uniqueIpsInLine.length > 0) simplifiedParts.push('IPs: ' + uniqueIpsInLine.join(', '));
+                        if (filterUrl && uniqueUrlsInLine.length > 0) simplifiedParts.push('URLs: ' + uniqueUrlsInLine.join(', '));
+                        if (filterHostname && uniqueHostnamesInLine.length > 0) simplifiedParts.push('Noms d\'hôte: ' + uniqueHostnamesInLine.join(', '));
+                        if (filterMac && uniqueMacsInLine.length > 0) simplifiedParts.push('Adresses MAC: ' + uniqueMacsInLine.join(', '));
+                        
+                        displayLine = simplifiedParts.join(' ');
+                    }
+
+                    const logEntryDiv = document.createElement('div');
+                    logEntryDiv.className = 'log-entry ' + logEntryDivClass;
+                    logEntryDiv.textContent = displayLine;
+                    decodedLogOutput.appendChild(logEntryDiv);
+                }
+            });
+
+            let summaryHtml = '';
+
+            // Fonction auxiliaire pour générer le HTML de la table du résumé
+            function generateSummaryTable(map, categoryName) {
+                // Ne générer le tableau que si le filtre de type correspondant est ACTIF ET qu'il y a des données
+                // Le filtre "anyDataTypeFilterActiveForLineDisplay" n'est pas utilisé ici pour permettre
+                // au résumé d'être filtré indépendamment de l'affichage ligne par ligne.
+                
+                // On vérifie directement l'état de la checkbox correspondante
+                let shouldGenerateTable = false;
+                if (categoryName === 'Adresses IP' && filterIp) shouldGenerateTable = true;
+                else if (categoryName === 'URLs' && filterUrl) shouldGenerateTable = true;
+                else if (categoryName === 'Noms d\'hôte' && filterHostname) shouldGenerateTable = true;
+                else if (categoryName === 'Adresses MAC' && filterMac) shouldGenerateTable = true;
+
+                // Si aucune case n'est cochée, on affiche tout dans le résumé (comportement par défaut)
+                if (!anyDataTypeFilterActiveForLineDisplay && map.size > 0) {
+                    shouldGenerateTable = true;
+                }
+                 // Si aucun filtre de type n'est activé DU TOUT, toutes les catégories du résumé s'affichent
+                if (!filterIp && !filterUrl && !filterHostname && !filterMac) {
+                    shouldGenerateTable = (map.size > 0); // Afficher toutes les catégories qui ont des données
+                }
+
+
+                if (shouldGenerateTable && map.size > 0) {
+                    summaryHtml += '<div class="summary-category-header">' + categoryName + ' (' + map.size + ' uniques)</div>';
+                    summaryHtml += '<table class="summary-table">';
+                    summaryHtml += '<thead><tr><th>Élément</th><th>Compte</th></tr></thead>';
+                    summaryHtml += '<tbody>';
+                    Array.from(map.entries())
+                         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                         .forEach(([item, count]) => {
+                        summaryHtml += '<tr><td>' + item + '</td><td>' + count + '</td></tr>';
+                    });
+                    summaryHtml += '</tbody></table>';
+                }
+            }
+
+            generateSummaryTable(uniqueIpsWithCount, 'Adresses IP');
+            generateSummaryTable(uniqueUrlsWithCount, 'URLs');
+            generateSummaryTable(uniqueHostnamesWithCount, 'Noms d\'hôte');
+            generateSummaryTable(uniqueMacsWithCount, 'Adresses MAC');
+
+            if (summaryHtml === '') {
+                uniqueDataSummary.innerHTML = 'Aucune donnée unique à afficher avec les filtres actuels.';
+            } else {
+                uniqueDataSummary.innerHTML = summaryHtml;
+            }
+
+            if (decodedLogOutput.innerHTML === '') {
+                decodedLogOutput.innerHTML = 'Aucune entrée de log ne correspond aux critères de filtre.';
+            }
+        }
+
+        function clearAllFilters() {
+            document.getElementById('filterLevel').value = 'all';
+            document.getElementById('filterText').value = '';
+            document.getElementById('filterIp').checked = false;
+            document.getElementById('filterUrl').checked = false;
+            document.getElementById('filterHostname').checked = false;
+            document.getElementById('filterMac').checked = false;
+            applyFilters();
+        }
+
+        function escapeCsvField(field) {
+            if (field === null || field === undefined) return '';
+            let strField = String(field); 
+            if (strField.includes(',') || strField.includes('"') || strField.includes('\n') || strField.includes('\r')) {
+                return '"' + strField.replace(/"/g, '""') + '"';
+            }
+            return strField;
+        }
+
+        function exportFilteredLogsToCsv() {
+            if (currentFilteredLines.length === 0) {
+                alert("Il n'y a aucune ligne filtrée à exporter.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            csvContent += "Entrée de Log,Niveau,Horodatage,Processus,Adresses IP,URLs,Noms d'hôte,Adresses MAC\n"; 
+
+            currentFilteredLines.forEach(line => {
+                const level = line.toLowerCase().includes('error') ? 'ERREUR' : 
+                              (line.toLowerCase().includes('warning') ? 'AVERTISSEMENT' :
+                              (line.toLowerCase().includes('info') ? 'INFO' : 'INCONNU'));
+                
+                const extractedIps = Array.from(new Set(line.match(ipRegex) || []));
+                const extractedUrls = Array.from(new Set(line.match(urlRegex) || []));
+                const extractedHostnames = Array.from(new Set(line.match(hostname) || []));
+                const extractedMacs = Array.from(new Set(line.match(macRegex) || []));
+
+                logPatternRegex.lastIndex = 0;
+                const logMatch = logPatternRegex.exec(line);
+                
+                const timestamp = logMatch && logMatch[1] ? logMatch[1] : '';
+                const process = logMatch && logMatch[2] ? logMatch[2] : '';
+
+                csvContent += escapeCsvField(line) + "," + 
+                              escapeCsvField(level) + "," +
+                              escapeCsvField(timestamp) + "," +
+                              escapeCsvField(process) + "," +
+                              escapeCsvField(extractedIps.join('; ')) + "," + 
+                              escapeCsvField(extractedUrls.join('; ')) + "," +
+                              escapeCsvField(extractedHostnames.join('; ')) + "," +
+                              escapeCsvField(extractedMacs.join('; ')) + "\n";
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "logs_filtres.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function exportSummaryToCsv() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            
+            let hasData = false;
+
+            function addSummaryToCsv(map, typeName, isChecked, hasPrevData) {
+                let sectionContent = "";
+                // NOUVEAU : Inclure dans le CSV seulement si la case est cochée
+                if (isChecked && map.size > 0) {
+                    if (hasPrevData) sectionContent += "\n";
+                    sectionContent += "Type,Élément,Compte\n";
+                    Array.from(map.entries())
+                         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                         .forEach(([item, count]) => {
+                        sectionContent += escapeCsvField(typeName) + "," + escapeCsvField(item) + "," + escapeCsvField(count) + "\n";
+                    });
+                    return sectionContent;
+                }
+                // Si aucune case n'est cochée du tout, inclure tout dans le CSV du résumé
+                if (!document.getElementById('filterIp').checked &&
+                    !document.getElementById('filterUrl').checked &&
+                    !document.getElementById('filterHostname').checked &&
+                    !document.getElementById('filterMac').checked && map.size > 0) {
+                    if (hasPrevData) sectionContent += "\n";
+                    sectionContent += "Type,Élément,Compte\n";
+                    Array.from(map.entries())
+                         .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+                         .forEach(([item, count]) => {
+                        sectionContent += escapeCsvField(typeName) + "," + escapeCsvField(item) + "," + escapeCsvField(count) + "\n";
+                    });
+                    return sectionContent;
+                }
+
+                return "";
+            }
+
+            // Vérifier l'état des checkboxes pour l'export CSV du résumé
+            const filterIp = document.getElementById('filterIp').checked;
+            const filterUrl = document.getElementById('filterUrl').checked;
+            const filterHostname = document.getElementById('filterHostname').checked;
+            const filterMac = document.getElementById('filterMac').checked;
+
+            // Important: Si aucune case n'est cochée, nous devons tout exporter par défaut.
+            const noFilterChecked = !(filterIp || filterUrl || filterHostname || filterMac);
+
+
+            // IPs
+            const ipsCsv = addSummaryToCsv(uniqueIpsWithCount, "Adresse IP", filterIp || noFilterChecked, hasData);
+            if (ipsCsv) { csvContent += ipsCsv; hasData = true; }
+
+            // URLs
+            const urlsCsv = addSummaryToCsv(uniqueUrlsWithCount, "URL", filterUrl || noFilterChecked, hasData);
+            if (urlsCsv) { csvContent += urlsCsv; hasData = true; }
+
+            // Hostnames
+            const hostnamesCsv = addSummaryToCsv(uniqueHostnamesWithCount, "Nom d'hôte", filterHostname || noFilterChecked, hasData);
+            if (hostnamesCsv) { csvContent += hostnamesCsv; hasData = true; }
+
+            // MAC Addresses
+            const macsCsv = addSummaryToCsv(uniqueMacsWithCount, "Adresse MAC", filterMac || noFilterChecked, hasData);
+            if (macsCsv) { csvContent += macsCsv; hasData = true; }
+
+            if (!hasData) {
+                alert("Aucune donnée unique à exporter dans le résumé.");
+                return;
+            }
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "resume_logs.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+    </script>
+		<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+			<a href="../index.html" class="back-to-menu-button">
+			<span class="button-icon">&larr;</span> Volver al Menú Principal
+			</a>
+	</div>
+</body>
+</html>
