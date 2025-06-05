@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Actualizaciones de Windows</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #e9e9e9;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input[type="date"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="checkbox"] {
+            margin-top: 10px;
+        }
+        button {
+            grid-column: span 2;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        /* Estilos para los checkboxes en la tabla */
+        .table-checkbox {
+            margin: 0;
+            vertical-align: middle;
+            width: 18px; /* Ajusta el tamaño si es necesario */
+            height: 18px; /* Ajusta el tamaño si es necesario */
+        }
+        .report-button-container {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex; /* Usar flexbox para alinear botones */
+            justify-content: center; /* Centrar horizontalmente */
+            gap: 15px; /* Espacio entre los botones */
+        }
+        .action-button { /* Clase genérica para botones de acción */
+            padding: 10px 18px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .report-button {
+            background-color: #28a745;
+        }
+        .report-button:hover {
+            background-color: #218838;
+        }
+        .clear-history-button {
+            background-color: #ffc107; /* Color naranja/amarillo para advertencia */
+            color: #333; /* Texto oscuro para que contraste */
+        }
+        .clear-history-button:hover {
+            background-color: #e0a800;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Control de Actualizaciones de Windows</h1>
+
+        <form id="updateForm">
+            <div>
+                <label for="fecha">Fecha:</label>
+                <input type="date" id="fecha" required>
+            </div>
+            <div>
+                <label for="server">Servidor:</label>
+                <select id="server" required>
+                    <option value="">Seleccione un servidor</option>
+                    </select>
+            </div>
+            <div>
+                <label for="location">Localización:</label>
+                <select id="location" required>
+                    <option value="">Seleccione una ubicación</option>
+                    <option value="AWS">AWS</option>
+                    <option value="OnPrem">OnPrem</option>
+                </select>
+            </div>
+            <button type="submit">Agregar Actualización</button>
+        </form>
+
+        ---
+
+        <h2>Historial de Actualizaciones</h2>
+        <div class="report-button-container">
+            <button id="generateReportBtn" class="action-button report-button">Generar Reporte (CSV)</button>
+            <button id="clearHistoryBtn" class="action-button clear-history-button">Limpiar Historial Completo</button>
+        </div>
+        <table id="updateTable">
+            <thead>
+                <tr>
+                    <th>Fecha</th>
+                    <th>Servidor</th>
+                    <th>Localización</th>
+                    <th>Snapshot</th>
+                    <th>MAJ</th>
+                    <th>Reinicio</th>
+                    <th>Hecho</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const updateForm = document.getElementById('updateForm');
+            const updateTableBody = document.querySelector('#updateTable tbody');
+            const serverSelect = document.getElementById('server');
+            const locationSelect = document.getElementById('location');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+            // --- LISTA DE SERVIDORES QUE PUEDES MODIFICAR FÁCILMENTE ---
+            const serverNames = [
+                "ser01", "ser02", "ser03", "ser04", "ser05", "ser06", "ser07", "ser08",
+                "ser09", "ser10", "ser11", "ser12", "ser13", "ser14", "ser15", "ser16",
+                "web-server-prod", // Ejemplo de otro tipo de servidor
+                "db-cluster-dev",  // Otro ejemplo
+                "srv-legacy-01"    // Y otro más
+            ];
+
+            // Generar opciones para el selector de servidores a partir del arreglo
+            serverNames.forEach(serverName => {
+                const option = document.createElement('option');
+                option.value = serverName;
+                option.textContent = serverName;
+                serverSelect.appendChild(option);
+            });
+            // --- FIN DE LA LISTA DE SERVIDORES ---
+
+
+            // Cargar datos del localStorage al cargar la página
+            loadUpdates();
+
+            updateForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const fecha = document.getElementById('fecha').value;
+                const server = serverSelect.value;
+                const location = locationSelect.value;
+
+                // Validación básica para selectores
+                if (!server || !location) {
+                    alert('Por favor, seleccione un servidor y una ubicación.');
+                    return;
+                }
+
+                // Valores iniciales para Snapshot, MAJ, Reboot, Hecho (todos false al agregar)
+                addUpdate(fecha, server, location, false, false, false, false);
+                updateForm.reset();
+                serverSelect.value = ''; // Resetear selectores
+                locationSelect.value = '';
+            });
+
+            function addUpdate(fecha, server, location, snapshot, maj, reboot, hecho) {
+                const newRow = updateTableBody.insertRow();
+                newRow.dataset.id = Date.now(); // Añadir un ID único a la fila
+
+                newRow.insertCell().textContent = fecha;
+                newRow.insertCell().textContent = server;
+                newRow.insertCell().textContent = location;
+
+                // Snapshot (casilla)
+                const snapshotCell = newRow.insertCell();
+                const snapshotCheckbox = document.createElement('input');
+                snapshotCheckbox.type = 'checkbox';
+                snapshotCheckbox.classList.add('table-checkbox');
+                snapshotCheckbox.checked = snapshot;
+                snapshotCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'snapshot', snapshotCheckbox.checked));
+                snapshotCell.appendChild(snapshotCheckbox);
+
+                // MAJ (casilla)
+                const majCell = newRow.insertCell();
+                const majCheckbox = document.createElement('input');
+                majCheckbox.type = 'checkbox';
+                majCheckbox.classList.add('table-checkbox');
+                majCheckbox.checked = maj;
+                majCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'maj', majCheckbox.checked));
+                majCell.appendChild(majCheckbox);
+
+                // Reboot (casilla)
+                const rebootCell = newRow.insertCell();
+                const rebootCheckbox = document.createElement('input');
+                rebootCheckbox.type = 'checkbox';
+                rebootCheckbox.classList.add('table-checkbox');
+                rebootCheckbox.checked = reboot;
+                rebootCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'reboot', rebootCheckbox.checked));
+                rebootCell.appendChild(rebootCheckbox);
+
+                // Hecho (casilla)
+                const hechoCell = newRow.insertCell();
+                const hechoCheckbox = document.createElement('input');
+                hechoCheckbox.type = 'checkbox';
+                hechoCheckbox.classList.add('table-checkbox');
+                hechoCheckbox.checked = hecho;
+                hechoCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'hecho', hechoCheckbox.checked));
+                hechoCell.appendChild(hechoCheckbox);
+
+                const actionsCell = newRow.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Eliminar';
+                deleteButton.classList.add('delete-btn');
+                deleteButton.addEventListener('click', () => {
+                    deleteRow(newRow.dataset.id);
+                });
+                actionsCell.appendChild(deleteButton);
+
+                // Guardar en localStorage
+                saveUpdate({ id: newRow.dataset.id, fecha, server, location, snapshot, maj, reboot, hecho });
+            }
+
+            function saveUpdate(update) {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                updates.push(update);
+                localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+            }
+
+            function loadUpdates() {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                updates.forEach(update => {
+                    addUpdate(update.fecha, update.server, update.location, update.snapshot, update.maj, update.reboot, update.hecho);
+                });
+            }
+
+            function updateLocalStorage(id, field, value) {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                const index = updates.findIndex(update => update.id == id);
+                if (index !== -1) {
+                    updates[index][field] = value;
+                    localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+                }
+            }
+
+            function deleteRow(id) {
+                const rowToDelete = document.querySelector(`tr[data-id="${id}"]`);
+                if (rowToDelete) {
+                    rowToDelete.remove();
+                    let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                    updates = updates.filter(update => update.id != id);
+                    localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+                }
+            }
+
+            // --- Funcionalidad de Reporte CSV ---
+            generateReportBtn.addEventListener('click', () => {
+                generateCSVReport();
+            });
+
+            function generateCSVReport() {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                if (updates.length === 0) {
+                    alert('No hay datos en el historial para generar un reporte.');
+                    return;
+                }
+
+                const headers = ["Fecha", "Servidor", "Localizacion", "Snapshot", "MAJ", "Reinicio", "Hecho"];
+                let csvContent = "";
+
+                // Añadir la marca BOM para UTF-8
+                csvContent += "\ufeff"; // BOM para UTF-8
+
+                csvContent += headers.join(",") + "\n"; // Cabeceras CSV
+
+                updates.forEach(item => {
+                    const row = [
+                        item.fecha,
+                        item.server,
+                        item.location,
+                        item.snapshot ? "Sí" : "No", // Convertir booleanos a Sí/No
+                        item.maj ? "Sí" : "No",
+                        item.reboot ? "Sí" : "No",
+                        item.hecho ? "Sí" : "No"
+                    ];
+                    csvContent += row.join(",") + "\n";
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Ajustar el nombre del archivo para que incluya la fecha actual de Montreal
+                const today = new Date();
+                const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Montreal' };
+                const formattedDate = today.toLocaleDateString('en-CA', options).replace(/\//g, '-'); //YYYY-MM-DD
+                a.download = `reporte_actualizaciones_windows_${formattedDate}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Limpiar la URL del objeto
+            }
+
+            // --- Funcionalidad: Limpiar Historial Completo ---
+            clearHistoryBtn.addEventListener('click', () => {
+                if (confirm('¿Estás seguro de que quieres limpiar TODO el historial? Esta acción no se puede deshacer.')) {
+                    localStorage.removeItem('windowsUpdates'); // Eliminar todos los datos del localStorage
+                    updateTableBody.innerHTML = ''; // Limpiar la tabla visible
+                    alert('El historial ha sido limpiado.');
+                }
+            });
+        });
+    </script>
+</body>
+</html>

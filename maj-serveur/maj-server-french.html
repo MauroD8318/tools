@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Suivi des Mises à Jour Windows</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        h1 {
+            color: #0056b3;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: #e9e9e9;
+        }
+        label {
+            font-weight: bold;
+            margin-bottom: 5px;
+            display: block;
+        }
+        input[type="date"],
+        input[type="text"],
+        select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        input[type="checkbox"] {
+            margin-top: 10px;
+        }
+        button {
+            grid-column: span 2;
+            padding: 12px 20px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            border: none;
+            padding: 6px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        /* Styles pour les cases à cocher dans le tableau */
+        .table-checkbox {
+            margin: 0;
+            vertical-align: middle;
+            width: 18px; /* Ajustez la taille si nécessaire */
+            height: 18px; /* Ajustez la taille si nécessaire */
+        }
+        .report-button-container {
+            text-align: center;
+            margin-top: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+        }
+        .action-button {
+            padding: 10px 18px;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+            transition: background-color 0.3s ease;
+        }
+        .report-button {
+            background-color: #28a745;
+        }
+        .report-button:hover {
+            background-color: #218838;
+        }
+        .clear-history-button {
+            background-color: #ffc107;
+            color: #333;
+        }
+        .clear-history-button:hover {
+            background-color: #e0a800;
+        }
+				/* Estilos para el botón de regreso */
+		.back-to-menu-button {
+			display: inline-flex;
+			align-items: center;
+			padding: 12px 25px;
+			background-color: #007bff;
+			color: #FFFFFF;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 1.1em;
+			transition: background-color 0.3s ease, transform 0.2s ease;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.back-to-menu-button:hover {
+			background-color: #0056b3;
+			transform: translateY(-2px);
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+		
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Suivi des Mises à Jour Windows</h1>
+
+        <form id="updateForm">
+            <div>
+                <label for="fecha">Date :</label>
+                <input type="date" id="fecha" required>
+            </div>
+            <div>
+                <label for="server">Serveur :</label>
+                <select id="server" required>
+                    <option value="">Sélectionnez un serveur</option>
+                    </select>
+            </div>
+            <div>
+                <label for="location">Localisation :</label>
+                <select id="location" required>
+                    <option value="">Sélectionnez une localisation</option>
+                    <option value="AWS">AWS</option>
+                    <option value="OnPrem">Sur site</option>
+                </select>
+            </div>
+            <button type="submit">Ajouter Mise à Jour</button>
+        </form>
+
+        ---
+
+        <h2>Historique des Mises à Jour</h2>
+        <div class="report-button-container">
+            <button id="generateReportBtn" class="action-button report-button">Générer Rapport (CSV)</button>
+            <button id="clearHistoryBtn" class="action-button clear-history-button">Effacer Historique Complet</button>
+        </div>
+        <table id="updateTable">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Serveur</th>
+                    <th>Localisation</th>
+                    <th>Snapshot</th>
+                    <th>MAJ</th>
+                    <th>Redémarrage</th>
+                    <th>Fait</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const updateForm = document.getElementById('updateForm');
+            const updateTableBody = document.querySelector('#updateTable tbody');
+            const serverSelect = document.getElementById('server');
+            const locationSelect = document.getElementById('location');
+            const generateReportBtn = document.getElementById('generateReportBtn');
+            const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+
+            // --- LISTE DES SERVEURS QUE VOUS POUVEZ FACILEMENT MODIFIER ---
+            const serverNames = [
+                "ser01", "ser02", "ser03", "ser04", "ser05", "ser06", "ser07", "ser08",
+                "ser09", "ser10", "ser11", "ser12", "ser13", "ser14", "ser15", "ser16",
+                "serveur-web-prod", // Exemple d'un autre type de serveur
+                "cluster-bd-dev",  // Autre exemple
+                "srv-herite-01"    // Et un autre
+            ];
+
+            // Générer les options pour le sélecteur de serveurs à partir du tableau
+            serverNames.forEach(serverName => {
+                const option = document.createElement('option');
+                option.value = serverName;
+                option.textContent = serverName;
+                serverSelect.appendChild(option);
+            });
+            // --- FIN DE LA LISTE DES SERVEURS ---
+
+
+            // Charger les données du localStorage au chargement de la page
+            loadUpdates();
+
+            updateForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+
+                const fecha = document.getElementById('fecha').value;
+                const server = serverSelect.value;
+                const location = locationSelect.value;
+
+                // Validation de base pour les sélecteurs
+                if (!server || !location) {
+                    alert('Veuillez sélectionner un serveur et une localisation.');
+                    return;
+                }
+
+                // Valeurs initiales pour Snapshot, MAJ, Redémarrage, Fait (tous faux lors de l'ajout)
+                addUpdate(fecha, server, location, false, false, false, false);
+                updateForm.reset();
+                serverSelect.value = ''; // Réinitialiser les sélecteurs
+                locationSelect.value = '';
+            });
+
+            function addUpdate(fecha, server, location, snapshot, maj, reboot, hecho) {
+                const newRow = updateTableBody.insertRow();
+                newRow.dataset.id = Date.now(); // Ajouter un ID unique à la ligne
+
+                newRow.insertCell().textContent = fecha;
+                newRow.insertCell().textContent = server;
+                newRow.insertCell().textContent = location;
+
+                // Snapshot (case à cocher)
+                const snapshotCell = newRow.insertCell();
+                const snapshotCheckbox = document.createElement('input');
+                snapshotCheckbox.type = 'checkbox';
+                snapshotCheckbox.classList.add('table-checkbox');
+                snapshotCheckbox.checked = snapshot;
+                snapshotCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'snapshot', snapshotCheckbox.checked));
+                snapshotCell.appendChild(snapshotCheckbox);
+
+                // MAJ (case à cocher)
+                const majCell = newRow.insertCell();
+                const majCheckbox = document.createElement('input');
+                majCheckbox.type = 'checkbox';
+                majCheckbox.classList.add('table-checkbox');
+                majCheckbox.checked = maj;
+                majCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'maj', majCheckbox.checked));
+                majCell.appendChild(majCheckbox);
+
+                // Redémarrage (case à cocher)
+                const rebootCell = newRow.insertCell();
+                const rebootCheckbox = document.createElement('input');
+                rebootCheckbox.type = 'checkbox';
+                rebootCheckbox.classList.add('table-checkbox');
+                rebootCheckbox.checked = reboot;
+                rebootCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'reboot', rebootCheckbox.checked));
+                rebootCell.appendChild(rebootCheckbox);
+
+                // Fait (case à cocher)
+                const hechoCell = newRow.insertCell();
+                const hechoCheckbox = document.createElement('input');
+                hechoCheckbox.type = 'checkbox';
+                hechoCheckbox.classList.add('table-checkbox');
+                hechoCheckbox.checked = hecho;
+                hechoCheckbox.addEventListener('change', () => updateLocalStorage(newRow.dataset.id, 'hecho', hechoCheckbox.checked));
+                hechoCell.appendChild(hechoCheckbox);
+
+                const actionsCell = newRow.insertCell();
+                const deleteButton = document.createElement('button');
+                deleteButton.textContent = 'Supprimer';
+                deleteButton.classList.add('delete-btn');
+                deleteButton.addEventListener('click', () => {
+                    deleteRow(newRow.dataset.id);
+                });
+                actionsCell.appendChild(deleteButton);
+
+                // Sauvegarder dans localStorage
+                saveUpdate({ id: newRow.dataset.id, fecha, server, location, snapshot, maj, reboot, hecho });
+            }
+
+            function saveUpdate(update) {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                updates.push(update);
+                localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+            }
+
+            function loadUpdates() {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                updates.forEach(update => {
+                    addUpdate(update.fecha, update.server, update.location, update.snapshot, update.maj, update.reboot, update.hecho);
+                });
+            }
+
+            function updateLocalStorage(id, field, value) {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                const index = updates.findIndex(update => update.id == id);
+                if (index !== -1) {
+                    updates[index][field] = value;
+                    localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+                }
+            }
+
+            function deleteRow(id) {
+                const rowToDelete = document.querySelector(`tr[data-id="${id}"]`);
+                if (rowToDelete) {
+                    rowToDelete.remove();
+                    let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                    updates = updates.filter(update => update.id != id);
+                    localStorage.setItem('windowsUpdates', JSON.stringify(updates));
+                }
+            }
+
+            // --- Fonctionnalité de Rapport CSV ---
+            generateReportBtn.addEventListener('click', () => {
+                generateCSVReport();
+            });
+
+            function generateCSVReport() {
+                let updates = JSON.parse(localStorage.getItem('windowsUpdates')) || [];
+                if (updates.length === 0) {
+                    alert('Aucune donnée dans l\'historique pour générer un rapport.');
+                    return;
+                }
+
+                const headers = ["Date", "Serveur", "Localisation", "Snapshot", "MAJ", "Redemarrage", "Fait"];
+                let csvContent = "";
+
+                // Ajouter la marque BOM pour UTF-8
+                csvContent += "\ufeff"; // BOM pour UTF-8
+
+                csvContent += headers.join(",") + "\n"; // En-têtes CSV
+
+                updates.forEach(item => {
+                    const row = [
+                        item.fecha,
+                        item.server,
+                        item.location,
+                        item.snapshot ? "Oui" : "Non", // Convertir les booléens en Oui/Non
+                        item.maj ? "Oui" : "Non",
+                        item.reboot ? "Oui" : "Non",
+                        item.hecho ? "Oui" : "Non"
+                    ];
+                    // Pour gérer les commas à l'intérieur des champs, si vous aviez des champs texte,
+                    // il faudrait entourer chaque champ de guillemets doubles. Pour les booléens/dates, ce n'est pas nécessaire.
+                    csvContent += row.map(field => `"${field}"`).join(",") + "\n"; // Utiliser map pour entourer chaque champ de guillemets
+                });
+
+                const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // Ajuster le nom du fichier pour inclure la date actuelle de Montréal
+                const today = new Date();
+                const options = { year: 'numeric', month: '2-digit', day: '2-digit', timeZone: 'America/Montreal' };
+                const formattedDate = today.toLocaleDateString('en-CA', options).replace(/\//g, '-'); //AAAA-MM-JJ
+                a.download = `rapport_mises_a_jour_windows_${formattedDate}.csv`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url); // Nettoyer l'URL de l'objet
+            }
+
+            // --- Fonctionnalité : Effacer l'Historique Complet ---
+            clearHistoryBtn.addEventListener('click', () => {
+                if (confirm('Êtes-vous sûr de vouloir effacer TOUT l\'historique ? Cette action est irréversible.')) {
+                    localStorage.removeItem('windowsUpdates'); // Supprimer toutes les données du localStorage
+                    updateTableBody.innerHTML = ''; // Nettoyer le tableau visible
+                    alert('L\'historique a été effacé.');
+                }
+            });
+        });
+    </script>
+	<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+		<a href="../index.html" class="back-to-menu-button">
+        <span class="button-icon">&larr;</span> Volver al Menú Principal
+		</a>
+	</div>
+</body>
+</html>
