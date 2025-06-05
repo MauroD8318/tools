@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyseur de Fichiers CSV Avancé</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+        h1, h2 {
+            color: #0056b3;
+            margin-bottom: 20px;
+        }
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+            max-width: 1200px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        input[type="file"] {
+            margin-bottom: 15px;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-top: 10px;
+            margin-right: 10px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        select, input[type="text"], input[type="number"], input[type="date"] {
+            padding: 8px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+            margin-right: 10px;
+            margin-bottom: 10px;
+            min-width: 150px;
+            box-sizing: border-box;
+        }
+		/* Estilos para el botón de regreso */
+		.back-to-menu-button {
+			display: inline-flex;
+			align-items: center;
+			padding: 12px 25px;
+			background-color: #007bff;
+			color: #FFFFFF;
+			text-decoration: none;
+			border-radius: 8px;
+			font-weight: 600;
+			font-size: 1.1em;
+			transition: background-color 0.3s ease, transform 0.2s ease;
+			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+		}
+
+		.back-to-menu-button:hover {
+			background-color: #0056b3;
+			transform: translateY(-2px);
+			box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+		}
+
+		.button-icon {
+			margin-right: 8px;
+			font-size: 1.3em;
+		}
+
+        .section-box {
+            margin-bottom: 20px;
+            padding: 15px;
+            border: 1px solid #eee;
+            border-radius: 6px;
+            background-color: #f9f9f9;
+        }
+        .filter-group, .column-selector, .multi-filter-rule {
+            margin-bottom: 15px;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 5px;
+            background-color: #f0f8ff;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .filter-group label, .column-selector label, .multi-filter-rule label {
+            font-weight: bold;
+            margin-right: 5px;
+        }
+        .checkbox-label {
+            margin-right: 15px;
+            display: inline-block;
+            margin-bottom: 8px;
+        }
+        .checkbox-label input[type="checkbox"] {
+            margin-right: 5px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+            word-break: break-word;
+        }
+        th {
+            background-color: #007bff;
+            color: white;
+            font-weight: normal;
+        }
+        tr:nth-child(even) {
+            background-color: #f2f2f2;
+        }
+        #outputTable, #summaryTable {
+            max-height: 400px;
+            overflow-y: auto;
+            background-color: #fff;
+            border-radius: 5px;
+        }
+        #noDataMessage, #noSummaryMessage {
+            text-align: center;
+            color: #555;
+            padding: 20px;
+            background-color: #e9e9e9;
+            border-radius: 4px;
+            margin-top: 20px;
+        }
+        .summary-category-header {
+            font-weight: bold;
+            margin-top: 15px;
+            margin-bottom: 5px;
+            color: #0056b3;
+            font-size: 1.1em;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 3px;
+        }
+        .filter-rule-actions {
+            margin-left: auto;
+        }
+        .filter-rule-actions button {
+            margin-left: 5px;
+            margin-top: 0;
+            padding: 8px 12px;
+            font-size: 0.9em;
+        }
+        .operator-select {
+            min-width: unset;
+            width: auto;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Analyseur de Fichiers CSV Avancé</h1>
+        <p>Chargez un fichier CSV para mostrar su contenido, seleccionar las columnas a mostrar, aplicar filtros y exportar los resultados.</p>
+
+        <input type="file" id="csvFileInput" accept=".csv">
+        <button onclick="loadCsvFile()">Charger le Fichier CSV</button>
+        <button onclick="exportFilteredDataToCsv()" id="exportCsvButton" disabled>Exporter les Données Filtrées (CSV)</button>
+    </div>
+
+    <div class="container section-box" id="columnSelectorContainer" style="display: none;">
+        <h2>Sélectionner les Colonnes à Afficher</h2>
+        <div id="columnCheckboxes">
+        </div>
+    </div>
+
+    <div class="container section-box" id="filterContainer" style="display: none;">
+        <h2>Appliquer des Filtres</h2>
+
+        <div class="filter-group">
+            <label for="globalFilterText">Recherche globale : </label>
+            <input type="text" id="globalFilterText" placeholder="Rechercher dans toutes les colonnes..." onkeyup="applyFilters()">
+        </div>
+
+        <div id="multiFilterRulesContainer">
+            </div>
+        <button onclick="addFilterRule()">Ajouter un filtre</button>
+        <button onclick="clearAllFilters()">Effacer tous les Filtres</button>
+    </div>
+
+    <div class="container">
+        <h2>Données CSV Filtrées</h2>
+        <div id="outputTable">
+            <table id="csvTable">
+                <thead>
+                    <tr>
+                    </tr>
+                </thead>
+                <tbody>
+                    </tbody>
+            </table>
+            <p id="noDataMessage" style="display: block;">Veuillez charger un fichier CSV.</p>
+        </div>
+    </div>
+
+    <div class="container">
+        <h2>Résumé des Données Uniques et Fréquence par Colonne</h2>
+        <button onclick="exportSummaryToCsv()" id="exportSummaryCsvButton" disabled>Exporter le Résumé (CSV)</button>
+        <div id="summaryTable">
+            <p id="noSummaryMessage" style="display: block;">Chargez un fichier CSV pour voir le résumé.</p>
+        </div>
+    </div>
+
+    <script>
+        let fullCsvData = []; // Stores all parsed CSV data (array of objects)
+        let csvHeaders = []; // Stores all original CSV headers
+        let currentFilteredData = []; // Stores data after all filters (text, column, multi-filters)
+        let selectedDisplayColumns = []; // Stores currently selected columns for display in the table
+
+        const csvFileInput = document.getElementById('csvFileInput');
+        const exportCsvButton = document.getElementById('exportCsvButton');
+        const exportSummaryCsvButton = document.getElementById('exportSummaryCsvButton');
+        const columnSelectorContainer = document.getElementById('columnSelectorContainer');
+        const columnCheckboxesDiv = document.getElementById('columnCheckboxes');
+        const filterContainer = document.getElementById('filterContainer');
+
+        // New elements for advanced filtering
+        const globalFilterText = document.getElementById('globalFilterText');
+        const multiFilterRulesContainer = document.getElementById('multiFilterRulesContainer');
+
+        const csvTableHead = document.querySelector('#csvTable thead tr');
+        const csvTableBody = document.querySelector('#csvTable tbody');
+        const noDataMessage = document.getElementById('noDataMessage');
+        const summaryTableDiv = document.getElementById('summaryTable');
+        const noSummaryMessage = document.getElementById('noSummaryMessage');
+
+        // Store filter rules
+        let filterRules = [];
+
+        // --- CSV Parsing Logic ---
+        function parseCSV(text) {
+            const lines = text.split('\n').filter(line => line.trim() !== '');
+            if (lines.length === 0) return { headers: [], data: [] };
+
+            // Handle potential empty lines at the end causing issues with header parsing
+            const headers = lines[0].split(',').map(header => header.trim());
+            const data = lines.slice(1).map(line => {
+                const values = line.split(',').map(value => value.trim());
+                let row = {};
+                headers.forEach((header, index) => {
+                    row[header] = values[index];
+                });
+                return row;
+            });
+            return { headers, data };
+        }
+
+        // --- Load CSV File ---
+        function loadCsvFile() {
+            if (csvFileInput.files.length === 0) {
+                alert("Veuillez sélectionner un fichier CSV.");
+                return;
+            }
+
+            const file = csvFileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = function(e) {
+                const text = e.target.result;
+                const parsed = parseCSV(text);
+                fullCsvData = parsed.data;
+                csvHeaders = parsed.headers;
+
+                // Reset and enable elements
+                exportCsvButton.disabled = false;
+                exportSummaryCsvButton.disabled = false;
+                globalFilterText.value = ''; // Clear global filter
+
+                // Clear existing filter rules and add a default one if needed
+                filterRules = [];
+                multiFilterRulesContainer.innerHTML = ''; // Clear dynamic filters from DOM
+                addFilterRule(); // Add a default filter rule on load
+
+                // Set up column selectors and filters based on new headers
+                createColumnSelector();
+                applyFilters(); // Initial render with all data and default selected columns
+            };
+
+            reader.onerror = function() {
+                alert("Erreur lors de la lecture du fichier.");
+                fullCsvData = [];
+                csvHeaders = [];
+                currentFilteredData = [];
+                selectedDisplayColumns = [];
+                filterRules = []; // Clear rules on error
+                csvTableHead.innerHTML = '';
+                csvTableBody.innerHTML = '';
+                multiFilterRulesContainer.innerHTML = ''; // Clear dynamic filters
+                globalFilterText.value = ''; // Clear global filter
+                filterContainer.style.display = 'none';
+                columnSelectorContainer.style.display = 'none';
+                noDataMessage.textContent = 'Erreur lors du chargement du fichier CSV.';
+                noDataMessage.style.display = 'block';
+                noSummaryMessage.style.display = 'block';
+                exportCsvButton.disabled = true;
+                exportSummaryCsvButton.disabled = true;
+            };
+
+            reader.readAsText(file);
+        }
+
+        // --- Dynamic Column Selector ---
+        function createColumnSelector() {
+            columnCheckboxesDiv.innerHTML = ''; // Clear previous checkboxes
+            csvHeaders.forEach(header => {
+                const div = document.createElement('div');
+                div.className = 'checkbox-label';
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.id = `col-${header.replace(/\s+/g, '-')}`;
+                checkbox.value = header;
+                // Uncomment the line below to select all columns by default
+                // checkbox.checked = true;
+                checkbox.addEventListener('change', updateSelectedColumns);
+
+                const label = document.createElement('label');
+                label.htmlFor = checkbox.id;
+                label.textContent = header;
+
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                columnCheckboxesDiv.appendChild(div);
+            });
+            columnSelectorContainer.style.display = 'block';
+            // Initialize selectedDisplayColumns based on default checks (if any)
+            selectedDisplayColumns = csvHeaders.filter(header => {
+                const checkbox = document.getElementById(`col-${header.replace(/\s+/g, '-')}`);
+                return checkbox ? checkbox.checked : false;
+            });
+        }
+
+        function updateSelectedColumns() {
+            selectedDisplayColumns = [];
+            const checkboxes = columnCheckboxesDiv.querySelectorAll('input[type="checkbox"]:checked');
+            checkboxes.forEach(checkbox => {
+                selectedDisplayColumns.push(checkbox.value);
+            });
+            applyFilters(); // Re-render table with new column selection
+        }
+
+        // --- Dynamic Multi-Filter Rule Generation ---
+        function addFilterRule() {
+            const ruleId = `rule-${Date.now()}`; // Unique ID for each rule
+            const ruleDiv = document.createElement('div');
+            ruleDiv.className = 'filter-group multi-filter-rule';
+            ruleDiv.id = ruleId;
+
+            let ruleHtml = `
+                <label for="filterColumn-${ruleId}">Colonne:</label>
+                <select id="filterColumn-${ruleId}" onchange="updateFilterRule('${ruleId}')">
+                    <option value="">Sélectionner une colonne</option>
+                    ${csvHeaders.map(header => `<option value="${header}">${header}</option>`).join('')}
+                </select>
+
+                <label for="operator-${ruleId}">Opérateur:</label>
+                <select id="operator-${ruleId}" class="operator-select" onchange="updateFilterRule('${ruleId}')">
+                    <option value="contains">Contient</option>
+                    <option value="not_contains">Ne contient pas</option>
+                    <option value="equals">Est égal à</option>
+                    <option value="not_equals">N'est pas égal à</option>
+                    <option value="starts_with">Commence par</option>
+                    <option value="ends_with">Se termine par</option>
+                    <option value="is_empty">Est vide</option>
+                    <option value="is_not_empty">N'est pas vide</option>
+                    <option value="greater_than">Est supérieur à (>) </option>
+                    <option value="less_than">Est inférieur à (<) </option>
+                    <option value="equals_num">Est égal à (num)</option>
+                </select>
+
+                <label for="filterValue-${ruleId}" class="filter-value-label">Valeur:</label>
+                <input type="text" id="filterValue-${ruleId}" placeholder="Valeur de filtre..." onkeyup="applyFilters()">
+                <input type="number" id="filterNumberValue-${ruleId}" placeholder="Nombre..." onkeyup="applyFilters()" style="display:none;">
+                <input type="date" id="filterDateValue-${ruleId}" onchange="applyFilters()" style="display:none;">
+
+                <div class="filter-rule-actions">
+                    <button onclick="removeFilterRule('${ruleId}')">Supprimer</button>
+                </div>
+            `;
+            ruleDiv.innerHTML = ruleHtml;
+            multiFilterRulesContainer.appendChild(ruleDiv);
+
+            // Add a new empty rule to the filterRules array
+            filterRules.push({
+                id: ruleId,
+                column: '',
+                operator: 'contains', // Default operator
+                value: ''
+            });
+
+            // Update the UI for filter value input based on default operator
+            updateFilterValueInputType(ruleId, 'contains');
+
+            filterContainer.style.display = 'block';
+            applyFilters(); // Re-apply filters after adding a new rule
+        }
+
+        function removeFilterRule(ruleId) {
+            const ruleDiv = document.getElementById(ruleId);
+            if (ruleDiv) {
+                multiFilterRulesContainer.removeChild(ruleDiv);
+                filterRules = filterRules.filter(rule => rule.id !== ruleId);
+                applyFilters(); // Re-apply filters after removing a rule
+            }
+        }
+
+        // This function updates the filterRules array and adjusts input types based on operator
+        function updateFilterRule(ruleId) {
+            const columnSelect = document.getElementById(`filterColumn-${ruleId}`);
+            const operatorSelect = document.getElementById(`operator-${ruleId}`);
+            const textInput = document.getElementById(`filterValue-${ruleId}`);
+            const numberInput = document.getElementById(`filterNumberValue-${ruleId}`);
+            const dateInput = document.getElementById(`filterDateValue-${ruleId}`);
+            const filterValueLabel = document.querySelector(`#${ruleId} .filter-value-label`);
+
+            const ruleIndex = filterRules.findIndex(rule => rule.id === ruleId);
+            if (ruleIndex === -1) return; // Rule not found
+
+            filterRules[ruleIndex].column = columnSelect.value;
+            filterRules[ruleIndex].operator = operatorSelect.value;
+
+            // Adjust input visibility and type based on operator
+            updateFilterValueInputType(ruleId, operatorSelect.value);
+
+            // Capture the value based on the visible input
+            if (operatorSelect.value === 'is_empty' || operatorSelect.value === 'is_not_empty') {
+                filterRules[ruleIndex].value = ''; // No value needed for empty/not empty
+            } else if (numberInput && numberInput.style.display !== 'none') {
+                filterRules[ruleIndex].value = numberInput.value;
+            } else if (dateInput && dateInput.style.display !== 'none') {
+                filterRules[ruleIndex].value = dateInput.value;
+            } else {
+                filterRules[ruleIndex].value = textInput.value;
+            }
+
+            applyFilters();
+        }
+
+        function updateFilterValueInputType(ruleId, operator) {
+            const textInput = document.getElementById(`filterValue-${ruleId}`);
+            const numberInput = document.getElementById(`filterNumberValue-${ruleId}`);
+            const dateInput = document.getElementById(`filterDateValue-${ruleId}`);
+            const filterValueLabel = document.querySelector(`#${ruleId} .filter-value-label`);
+
+            // Hide all inputs first
+            textInput.style.display = 'none';
+            numberInput.style.display = 'none';
+            dateInput.style.display = 'none';
+            filterValueLabel.style.display = 'inline-block'; // Default to visible
+
+            // Show the appropriate input based on operator
+            if (operator === 'greater_than' || operator === 'less_than' || operator === 'equals_num') {
+                numberInput.style.display = 'inline-block';
+                textInput.value = ''; // Clear text input if switching to number
+                dateInput.value = ''; // Clear date input
+            } else if (operator === 'is_empty' || operator === 'is_not_empty') {
+                filterValueLabel.style.display = 'none'; // Hide label as no value is needed
+                textInput.value = ''; // Clear text input
+                numberInput.value = ''; // Clear number input
+                dateInput.value = ''; // Clear date input
+            } else { // Default to text input for other operators
+                textInput.style.display = 'inline-block';
+                numberInput.value = ''; // Clear number input if switching to text
+                dateInput.value = ''; // Clear date input
+            }
+        }
+
+
+        // --- Apply All Filters ---
+        function applyFilters() {
+            let filteredData = [...fullCsvData]; // Start with all loaded data
+
+            // 1. Apply Global Text Search
+            const globalSearchTerm = globalFilterText.value.toLowerCase().trim();
+            if (globalSearchTerm) {
+                filteredData = filteredData.filter(row => {
+                    return Object.values(row).some(value => {
+                        return String(value).toLowerCase().includes(globalSearchTerm);
+                    });
+                });
+            }
+
+            // 2. Apply Dynamic Multi-Filter Rules
+            filterRules.forEach(rule => {
+                const { id, column, operator } = rule;
+                let value = '';
+
+                // Get the current value from the correct input type for this rule
+                const textInput = document.getElementById(`filterValue-${id}`);
+                const numberInput = document.getElementById(`filterNumberValue-${id}`);
+                const dateInput = document.getElementById(`filterDateValue-${id}`);
+
+                if (operator === 'greater_than' || operator === 'less_than' || operator === 'equals_num') {
+                    value = parseFloat(numberInput ? numberInput.value : '');
+                    // Skip if invalid number and the operator actually requires a numeric value
+                    if (isNaN(value) && !['is_empty', 'is_not_empty'].includes(operator)) return;
+                } else if (dateInput && dateInput.style.display !== 'none') {
+                    value = dateInput.value; // Date string (YYYY-MM-DD)
+                } else {
+                    value = (textInput ? textInput.value : '').toLowerCase().trim();
+                }
+
+                if (column) { // Only apply rule if a column is selected
+                    filteredData = filteredData.filter(row => {
+                        const cellValue = String(row[column] || '').toLowerCase().trim();
+                        const originalCellValue = String(row[column] || '').trim(); // For exact comparisons / empty checks
+
+                        switch (operator) {
+                            case 'contains':
+                                return cellValue.includes(value);
+                            case 'not_contains':
+                                return !cellValue.includes(value);
+                            case 'equals':
+                                return cellValue === value;
+                            case 'not_equals':
+                                return cellValue !== value;
+                            case 'starts_with':
+                                return cellValue.startsWith(value);
+                            case 'ends_with':
+                                return cellValue.endsWith(value);
+                            case 'is_empty':
+                                return originalCellValue === '';
+                            case 'is_not_empty':
+                                return originalCellValue !== '';
+                            case 'greater_than':
+                                return parseFloat(originalCellValue) > value;
+                            case 'less_than':
+                                return parseFloat(originalCellValue) < value;
+                            case 'equals_num':
+                                return parseFloat(originalCellValue) === value;
+                            default:
+                                return true;
+                        }
+                    });
+                }
+            });
+
+            currentFilteredData = filteredData; // Store for export
+
+            renderTable(filteredData);
+            generateSummary(filteredData);
+        }
+
+        // --- Clear All Filters ---
+        function clearAllFilters() {
+            globalFilterText.value = ''; // Clear global search
+            filterRules = []; // Clear all dynamic rules
+            multiFilterRulesContainer.innerHTML = ''; // Remove rules from DOM
+
+            // Additionally, clear column selections if desired
+            columnCheckboxesDiv.querySelectorAll('input[type="checkbox"]').forEach(checkbox => {
+                checkbox.checked = false;
+            });
+            selectedDisplayColumns = []; // Clear selected columns
+
+            applyFilters(); // Re-apply to clear filters and re-render
+        }
+
+        // --- Render CSV Table ---
+        function renderTable(dataToRender) {
+            csvTableHead.innerHTML = '';
+            csvTableBody.innerHTML = '';
+
+            if (selectedDisplayColumns.length === 0 && csvHeaders.length > 0) {
+                noDataMessage.textContent = 'Por favor, seleccione al menos una columna para mostrar.';
+                noDataMessage.style.display = 'block';
+                return;
+            } else if (dataToRender.length === 0 && fullCsvData.length > 0) {
+                noDataMessage.textContent = 'Aucune entrée ne correspond aux critères de filtre.';
+                noDataMessage.style.display = 'block';
+                return;
+            } else if (fullCsvData.length === 0) {
+                noDataMessage.textContent = 'Veuillez charger un fichier CSV.';
+                noDataMessage.style.display = 'block';
+                return;
+            } else {
+                noDataMessage.style.display = 'none';
+            }
+
+            // Render headers based on selectedDisplayColumns
+            selectedDisplayColumns.forEach(header => {
+                const th = document.createElement('th');
+                th.textContent = header;
+                csvTableHead.appendChild(th);
+            });
+
+            // Render data rows based on selectedDisplayColumns
+            dataToRender.forEach(row => {
+                const tr = document.createElement('tr');
+                selectedDisplayColumns.forEach(header => {
+                    const td = document.createElement('td');
+                    td.textContent = row[header] || '';
+                    tr.appendChild(td);
+                });
+                csvTableBody.appendChild(tr);
+            });
+        }
+
+        // --- Generate Summary ---
+        function generateSummary(data) {
+            summaryTableDiv.innerHTML = '';
+            noSummaryMessage.style.display = 'none';
+
+            if (data.length === 0) {
+                noSummaryMessage.textContent = 'Aucune donnée pour générer le résumé avec les filtres actuels.';
+                noSummaryMessage.style.display = 'block';
+                return;
+            }
+
+            let hasSummaryContent = false;
+
+            selectedDisplayColumns.forEach(header => {
+                const uniqueValuesCount = new Map();
+                data.forEach(row => {
+                    const value = String(row[header] || '').trim();
+                    if (value) {
+                        uniqueValuesCount.set(value, (uniqueValuesCount.get(value) || 0) + 1);
+                    }
+                });
+
+                if (uniqueValuesCount.size > 0) {
+                    hasSummaryContent = true;
+                    let summaryHtml = '<div class="summary-category-header">' + header + ' (' + uniqueValuesCount.size + ' valeurs uniques)</div>';
+                    summaryHtml += '<table class="summary-table">';
+                    summaryHtml += '<thead><tr><th>Valeur</th><th>Compte</th></tr></thead>';
+                    summaryHtml += '<tbody>';
+                    Array.from(uniqueValuesCount.entries())
+                        .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+                        .forEach(([item, count]) => {
+                            summaryHtml += '<tr><td>' + escapeCsvField(item) + '</td><td>' + count + '</td></tr>';
+                        });
+                    summaryHtml += '</tbody></table>';
+                    summaryTableDiv.innerHTML += summaryHtml;
+                }
+            });
+
+            if (!hasSummaryContent) {
+                noSummaryMessage.textContent = 'Aucune donnée unique détectée dans les colonnes sélectionnées avec les filtres actuels.';
+                noSummaryMessage.style.display = 'block';
+            }
+        }
+
+        // --- CSV Export Utilities ---
+        function escapeCsvField(field) {
+            if (field === null || field === undefined) return '';
+            let strField = String(field);
+            if (strField.includes(',') || strField.includes('"') || strField.includes('\n') || strField.includes('\r')) {
+                return '"' + strField.replace(/"/g, '""') + '"';
+            }
+            return strField;
+        }
+
+        function downloadCsvFile(content, filename) {
+            const encodedUri = encodeURI(content);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", filename);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // --- Export Filtered Data to CSV ---
+        function exportFilteredDataToCsv() {
+            if (currentFilteredData.length === 0 || selectedDisplayColumns.length === 0) {
+                alert("Il n'y a aucune donnée ou aucune colonne sélectionnée à exporter.");
+                return;
+            }
+
+            let csvContent = "data:text/csv;charset=utf-8,";
+
+            // Add headers (only selected display columns)
+            csvContent += selectedDisplayColumns.map(header => escapeCsvField(header)).join(',') + '\n';
+
+            // Add data rows
+            currentFilteredData.forEach(row => {
+                const rowValues = selectedDisplayColumns.map(header => escapeCsvField(row[header] || ''));
+                csvContent += rowValues.join(',') + '\n';
+            });
+
+            downloadCsvFile(csvContent, "donnees_csv_filtrees.csv");
+        }
+
+        // --- Export Summary to CSV ---
+        function exportSummaryToCsv() {
+            let csvContent = "data:text/csv;charset=utf-8,";
+            let hasDataToExport = false;
+
+            selectedDisplayColumns.forEach(header => {
+                const uniqueValuesCount = new Map();
+                currentFilteredData.forEach(row => {
+                    const value = String(row[header] || '').trim();
+                    if (value) {
+                        uniqueValuesCount.set(value, (uniqueValuesCount.get(value) || 0) + 1);
+                    }
+                });
+
+                if (uniqueValuesCount.size > 0) {
+                    hasDataToExport = true;
+                    csvContent += escapeCsvField(`Résumé de la colonne: ${header}`) + '\n';
+                    csvContent += "Valeur,Compte\n";
+                    Array.from(uniqueValuesCount.entries())
+                        .sort((a, b) => b[1] - a[1] || String(a[0]).localeCompare(String(b[0])))
+                        .forEach(([item, count]) => {
+                            csvContent += escapeCsvField(item) + "," + escapeCsvField(count) + "\n";
+                        });
+                    csvContent += '\n'; // Add an empty line between summaries of different columns
+                }
+            });
+
+            if (!hasDataToExport) {
+                alert("Aucune donnée unique à exporter dans le résumé.");
+                return;
+            }
+
+            downloadCsvFile(csvContent, "resume_csv.csv");
+        }
+
+        // Initial state
+        renderTable([]);
+        noSummaryMessage.style.display = 'block';
+        // Add an initial filter rule when the page loads, if you want
+        addFilterRule();
+    </script>
+	<div style="text-align: center; margin-top: 30px; margin-bottom: 30px;">
+		<a href="../index.html" class="back-to-menu-button">
+            <span class="button-icon">&larr;</span> Volver al Menú Principal
+		</a>
+	</div>
+</body>
+</html>
